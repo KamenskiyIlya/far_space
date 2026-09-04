@@ -123,7 +123,7 @@ def read_frame(filename):
 
 
 async def animate_spaceship(canvas, frame_1, frame_2, row, column):
-    frames = cycle([frame_1, frame_2])
+    frames = cycle([frame_1, frame_1, frame_2, frame_2])
     frame_row, frame_column = get_frame_size(frame_1)
     window_row, window_column = canvas.getmaxyx()
     minimal_row, minimal_column = 1, 1
