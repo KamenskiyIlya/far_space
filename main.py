@@ -9,13 +9,19 @@ from curses_tools import draw_frame, get_frame_size, read_controls
 TIC_TIMEOUT = 0.1
 
 
-async def blink(canvas, row, column, symbol='*'):
+async def blink(
+    canvas,
+    row,
+    column,
+    offset_tics,
+    symbol='*',
+):
     while True:
         for _ in range(20):
             canvas.addstr(row, column, symbol, curses.A_DIM)
             await asyncio.sleep(0)
 
-        for _ in range(random.randint(1, 10)):
+        for _ in range(offset_tics):
             await asyncio.sleep(0)
 
         for _ in range(3):
@@ -39,7 +45,14 @@ def draw(canvas, starship_frame_1, starship_frame_2):
         rand_height = random.randint(2, window_height - 2)
         rand_width = random.randint(2, window_width - 2)
         rand_star = random.choice(stars)
-        coroutine = blink(canvas, rand_height, rand_width, rand_star)
+        rand_tick = random.randint(1, 10)
+        coroutine = blink(
+            canvas,
+            rand_height,
+            rand_width,
+            rand_tick,
+            rand_star,
+        )
         coroutines.append(coroutine)
 
     center_row = window_height // 2
