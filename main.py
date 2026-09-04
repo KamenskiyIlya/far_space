@@ -41,9 +41,14 @@ def draw(canvas, starship_frame_1, starship_frame_2):
     window_height, window_width = canvas.getmaxyx()
     coroutines = []
     stars = '+*.:'
+    border_offset = 2
     for _ in range(120):
-        rand_height = random.randint(2, window_height - 2)
-        rand_width = random.randint(2, window_width - 2)
+        rand_height = random.randint(
+            border_offset, window_height - border_offset
+        )
+        rand_width = random.randint(
+            border_offset, window_width - border_offset
+        )
         rand_star = random.choice(stars)
         rand_tick = random.randint(1, 10)
         coroutine = blink(
@@ -126,17 +131,18 @@ async def animate_spaceship(canvas, frame_1, frame_2, row, column):
     frames = cycle([frame_1, frame_1, frame_2, frame_2])
     frame_row, frame_column = get_frame_size(frame_1)
     window_row, window_column = canvas.getmaxyx()
-    minimal_row, minimal_column = 1, 1
-    border_size = 1
+    border_offset = 1
     while True:
         row_direction, column_direction, _ = read_controls(canvas)
         row += row_direction
         column += column_direction
 
-        row = max(minimal_row, min(row, window_row - frame_row - border_size))
+        row = max(
+            border_offset, min(row, window_row - frame_row - border_offset)
+        )
         column = max(
-            minimal_column,
-            min(column, window_column - frame_column - border_size),
+            border_offset,
+            min(column, window_column - frame_column - border_offset),
         )
 
         frame = next(frames)
