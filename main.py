@@ -19,12 +19,16 @@ def read_frame(filename, directory=Path('frames/')):
     return frame
 
 
+async def sleep(tics=1):
+    for _ in range(tics):
+        await asyncio.sleep(0)
+
+
 async def fill_orbit_with_garbage(canvas, garbage_frames, offset_tics):
     _, columns_number = canvas.getmaxyx()
     border_offset = 1
     while True:
-        for _ in range(offset_tics):
-            await asyncio.sleep(0)
+        await sleep(offset_tics)
         garbage_frame = random.choice(garbage_frames)
         _, frame_columns = get_frame_size(garbage_frame)
 
@@ -98,24 +102,15 @@ async def blink(
     symbol='*',
 ):
     while True:
-        for _ in range(20):
-            canvas.addstr(row, column, symbol, curses.A_DIM)
-            await asyncio.sleep(0)
-
-        for _ in range(offset_tics):
-            await asyncio.sleep(0)
-
-        for _ in range(3):
-            canvas.addstr(row, column, symbol)
-            await asyncio.sleep(0)
-
-        for _ in range(5):
-            canvas.addstr(row, column, symbol, curses.A_BOLD)
-            await asyncio.sleep(0)
-
-        for _ in range(3):
-            canvas.addstr(row, column, symbol)
-            await asyncio.sleep(0)
+        canvas.addstr(row, column, symbol, curses.A_DIM)
+        await sleep(20)
+        await sleep(offset_tics)
+        canvas.addstr(row, column, symbol)
+        await sleep(3)
+        canvas.addstr(row, column, symbol, curses.A_BOLD)
+        await sleep(5)
+        canvas.addstr(row, column, symbol)
+        await sleep(3)
 
 
 def draw(canvas, starship_frame_1, starship_frame_2, garbage_frames):
@@ -156,7 +151,7 @@ def draw(canvas, starship_frame_1, starship_frame_2, garbage_frames):
         )
     )
 
-    COROUTINES.append(fill_orbit_with_garbage(canvas, garbage_frames, 7))
+    COROUTINES.append(fill_orbit_with_garbage(canvas, garbage_frames, 10))
 
     canvas.nodelay(True)
     curses.curs_set(False)
