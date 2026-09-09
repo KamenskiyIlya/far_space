@@ -6,6 +6,7 @@ from itertools import cycle
 from pathlib import Path
 
 from curses_tools import draw_frame, get_frame_size, read_controls
+from obstacles import OBSTACLES, show_obstacles
 from physics import update_speed
 from space_garbage import fly_garbage
 
@@ -80,7 +81,7 @@ async def animate_spaceship(canvas, frame_1, frame_2, row, column):
         row_direction, column_direction, space_pressed = read_controls(canvas)
 
         if space_pressed:
-            await run_spaceship(canvas, row, column, frame_column)
+            await spaceship_shooting(canvas, row, column, frame_column)
 
         row_speed, column_speed = update_speed(
             row_speed,
@@ -107,7 +108,7 @@ async def animate_spaceship(canvas, frame_1, frame_2, row, column):
         draw_frame(canvas, row, column, frame, negative=True)
 
 
-async def run_spaceship(canvas, row, column, frame_column_size):
+async def spaceship_shooting(canvas, row, column, frame_column_size):
     starship_centre = round(frame_column_size / 2)
     column = column + starship_centre
     coroutine = fire(canvas, row, column)
@@ -172,6 +173,7 @@ def draw(canvas, starship_frame_1, starship_frame_2, garbage_frames):
     )
 
     COROUTINES.append(fill_orbit_with_garbage(canvas, garbage_frames, 10))
+    COROUTINES.append(show_obstacles(canvas, OBSTACLES))
 
     canvas.nodelay(True)
     curses.curs_set(False)
