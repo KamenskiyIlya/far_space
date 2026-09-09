@@ -77,7 +77,11 @@ async def animate_spaceship(canvas, frame_1, frame_2, row, column):
     border_offset = 1
     row_speed = column_speed = 0
     while True:
-        row_direction, column_direction, _ = read_controls(canvas)
+        row_direction, column_direction, space_pressed = read_controls(canvas)
+
+        if space_pressed:
+            await run_spaceship(canvas, row, column, frame_column)
+
         row_speed, column_speed = update_speed(
             row_speed,
             column_speed,
@@ -101,6 +105,13 @@ async def animate_spaceship(canvas, frame_1, frame_2, row, column):
         draw_frame(canvas, row, column, frame)
         await asyncio.sleep(0)
         draw_frame(canvas, row, column, frame, negative=True)
+
+
+async def run_spaceship(canvas, row, column, frame_column_size):
+    starship_centre = round(frame_column_size / 2)
+    column = column + starship_centre
+    coroutine = fire(canvas, row, column)
+    COROUTINES.append(coroutine)
 
 
 async def blink(
