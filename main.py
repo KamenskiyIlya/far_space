@@ -6,6 +6,7 @@ from itertools import cycle
 from pathlib import Path
 
 from curses_tools import draw_frame, get_frame_size, read_controls
+from physics import update_speed
 from space_garbage import fly_garbage
 
 TIC_TIMEOUT = 0.1
@@ -74,10 +75,18 @@ async def animate_spaceship(canvas, frame_1, frame_2, row, column):
     frame_row, frame_column = get_frame_size(frame_1)
     window_row, window_column = canvas.getmaxyx()
     border_offset = 1
+    row_speed = column_speed = 0
     while True:
         row_direction, column_direction, _ = read_controls(canvas)
-        row += row_direction
-        column += column_direction
+        row_speed, column_speed = update_speed(
+            row_speed,
+            column_speed,
+            row_direction,
+            column_direction,
+            fading=0.8,
+        )
+        row += row_speed
+        column += column_speed
 
         row = max(row, border_offset)
         row = min(row, window_row - frame_row - border_offset)
@@ -117,7 +126,7 @@ def draw(canvas, starship_frame_1, starship_frame_2, garbage_frames):
     window_height, window_width = canvas.getmaxyx()
     stars = '+*.:'
     border_offset = 2
-    for _ in range(120):
+    for _ in range(60):
         rand_height = random.randint(
             border_offset, window_height - border_offset
         )
