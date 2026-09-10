@@ -4,7 +4,7 @@ from curses_tools import draw_frame, get_frame_size
 from obstacles import OBSTACLES, OBSTACLES_IN_LAST_COLLISIONS, Obstacle
 
 
-async def fly_garbage(canvas, column, garbage_frame, speed=0.5):
+async def fly_garbage(canvas, column, garbage_frame, speed=0.25):
     """Animate garbage, flying from top to bottom. Сolumn position will stay same, as specified on start."""
     rows_number, columns_number = canvas.getmaxyx()
     column = max(column, 0)

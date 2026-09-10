@@ -11,7 +11,7 @@ from obstacles import OBSTACLES, OBSTACLES_IN_LAST_COLLISIONS, show_obstacles
 from physics import update_speed
 from space_garbage import fly_garbage
 
-TIC_TIMEOUT = 0.1
+TIC_TIMEOUT = 0.05
 COROUTINES = []
 
 
@@ -73,7 +73,7 @@ async def fire(
                 OBSTACLES_IN_LAST_COLLISIONS.append(obstacle)
                 center_row = obstacle.row + obstacle.rows_size / 2
                 center_column = obstacle.column + obstacle.columns_size / 2
-                await explode(canvas, center_row, center_column)
+                COROUTINES.append(explode(canvas, center_row, center_column))
                 return
         canvas.addstr(round(row), round(column), symbol)
         await asyncio.sleep(0)
@@ -82,13 +82,46 @@ async def fire(
         column += columns_speed
 
 
-async def animate_spaceship(canvas, frame_1, frame_2, row, column):
+async def show_gameover(canvas, gameover_frame):
+    rows_number, columns_number = canvas.getmaxyx()
+    center_row = rows_number / 2
+    center_column = columns_number / 2
+
+    row_size, column_size = get_frame_size(gameover_frame)
+    corner_row = round(center_row - row_size / 2)
+    corner_column = round(center_column - column_size / 2)
+    while True:
+        draw_frame(canvas, corner_row, corner_column, gameover_frame)
+        await asyncio.sleep(0)
+
+
+async def animate_spaceship(
+    canvas, frame_1, frame_2, row, column, gameover_frame
+):
     frames = cycle([frame_1, frame_1, frame_2, frame_2])
     frame_row, frame_column = get_frame_size(frame_1)
-    window_row, window_column = canvas.getmaxyx()
+    rows_number, columns_number = canvas.getmaxyx()
     border_offset = 1
     row_speed = column_speed = 0
     while True:
+        for obstacle in OBSTACLES:
+            if obstacle.has_collision(row, column, frame_row, frame_column):
+                OBSTACLES_IN_LAST_COLLISIONS.append(obstacle)
+
+                center_row = obstacle.row + obstacle.rows_size / 2
+                center_column = obstacle.column + obstacle.columns_size / 2
+                COROUTINES.append(explode(canvas, center_row, center_column))
+
+                starship_center_row = row - round(frame_row / 2)
+                starship_center_column = column - round(frame_column / 2)
+                COROUTINES.append(
+                    explode(
+                        canvas, starship_center_row, starship_center_column
+                    )
+                )
+
+                await show_gameover(canvas, gameover_frame)
+
         row_direction, column_direction, space_pressed = read_controls(canvas)
 
         if space_pressed:
@@ -105,13 +138,13 @@ async def animate_spaceship(canvas, frame_1, frame_2, row, column):
         column += column_speed
 
         row = max(row, border_offset)
-        row = min(row, window_row - frame_row - border_offset)
+        row = min(row, rows_number - frame_row - border_offset)
         column = max(
             border_offset,
-            min(column, window_column - frame_column - border_offset),
+            min(column, columns_number - frame_column - border_offset),
         )
         column = max(column, border_offset)
-        column = min(column, window_column - frame_column - border_offset)
+        column = min(column, columns_number - frame_column - border_offset)
 
         frame = next(frames)
         draw_frame(canvas, row, column, frame)
@@ -145,16 +178,18 @@ async def blink(
         await sleep(3)
 
 
-def draw(canvas, starship_frame_1, starship_frame_2, garbage_frames):
-    window_height, window_width = canvas.getmaxyx()
+def draw(
+    canvas, starship_frame_1, starship_frame_2, garbage_frames, gameover_frame
+):
+    rows_number, columns_number = canvas.getmaxyx()
     stars = '+*.:'
     border_offset = 2
     for _ in range(60):
         rand_height = random.randint(
-            border_offset, window_height - border_offset
+            border_offset, rows_number - border_offset
         )
         rand_width = random.randint(
-            border_offset, window_width - border_offset
+            border_offset, columns_number - border_offset
         )
         rand_star = random.choice(stars)
         rand_tick = random.randint(1, 10)
@@ -167,8 +202,8 @@ def draw(canvas, starship_frame_1, starship_frame_2, garbage_frames):
         )
         COROUTINES.append(coroutine)
 
-    center_row = window_height // 2
-    center_column = window_width // 2
+    center_row = rows_number // 2
+    center_column = columns_number // 2
     starship_height, starship_width = get_frame_size(starship_frame_1)
     starship_start_row = center_row - (starship_height // 2)
     starship_start_column = center_column - (starship_width // 2)
@@ -180,6 +215,7 @@ def draw(canvas, starship_frame_1, starship_frame_2, garbage_frames):
             starship_frame_2,
             starship_start_row,
             starship_start_column,
+            gameover_frame,
         )
     )
 
@@ -210,5 +246,13 @@ if __name__ == '__main__':
         for frame in garbage_path.glob('*.txt')
     ]
 
+    gameover_frame = read_frame('game_over.txt')
+
     curses.update_lines_cols()
-    curses.wrapper(draw, starship_frame_1, starship_frame_2, garbage_frames)
+    curses.wrapper(
+        draw,
+        starship_frame_1,
+        starship_frame_2,
+        garbage_frames,
+        gameover_frame,
+    )
