@@ -6,6 +6,7 @@ from itertools import cycle
 from pathlib import Path
 
 from curses_tools import draw_frame, get_frame_size, read_controls
+from explosion import explode
 from obstacles import OBSTACLES, OBSTACLES_IN_LAST_COLLISIONS, show_obstacles
 from physics import update_speed
 from space_garbage import fly_garbage
@@ -70,6 +71,9 @@ async def fire(
                 column,
             ):
                 OBSTACLES_IN_LAST_COLLISIONS.append(obstacle)
+                center_row = obstacle.row + obstacle.rows_size / 2
+                center_column = obstacle.column + obstacle.columns_size / 2
+                await explode(canvas, center_row, center_column)
                 return
         canvas.addstr(round(row), round(column), symbol)
         await asyncio.sleep(0)
