@@ -7,12 +7,36 @@ from pathlib import Path
 
 from curses_tools import draw_frame, get_frame_size, read_controls
 from explosion import explode
-from obstacles import OBSTACLES, OBSTACLES_IN_LAST_COLLISIONS, show_obstacles
+from game_scenario import get_garbage_delay_tics
+from obstacles import OBSTACLES, OBSTACLES_IN_LAST_COLLISIONS
 from physics import update_speed
 from space_garbage import fly_garbage
 
 TIC_TIMEOUT = 0.05
 COROUTINES = []
+YEAR = 1957
+
+
+async def year_counter_by_time(canvas, secs):
+    global YEAR
+    scoreboard_height = 2
+    rows_number, columns_number = canvas.getmaxyx()
+    subboard_rows, subboard_columns = scoreboard_height, columns_number - 1
+    subboard_start_row, subboard_start_column = (
+        rows_number - scoreboard_height,
+        1,
+    )
+    year_board = canvas.derwin(
+        subboard_rows,
+        subboard_columns,
+        subboard_start_row,
+        subboard_start_column,
+    )
+    year_msg_row, year_msg_column = 0, 1
+    while True:
+        year_board.addstr(year_msg_row, year_msg_column, f'Year: {YEAR}')
+        await sleep(int(secs / TIC_TIMEOUT))
+        YEAR += 1
 
 
 def read_frame(filename, directory=Path('frames/')):
@@ -27,11 +51,14 @@ async def sleep(tics=1):
         await asyncio.sleep(0)
 
 
-async def fill_orbit_with_garbage(canvas, garbage_frames, offset_tics):
+async def fill_orbit_with_garbage(canvas, garbage_frames):
     _, columns_number = canvas.getmaxyx()
     border_offset = 1
     while True:
-        await sleep(offset_tics)
+        delay = get_garbage_delay_tics(YEAR)
+        await sleep(delay if delay else 1)
+        if not delay:
+            continue
         garbage_frame = random.choice(garbage_frames)
         _, frame_columns = get_frame_size(garbage_frame)
 
@@ -112,8 +139,8 @@ async def animate_spaceship(
                 center_column = obstacle.column + obstacle.columns_size / 2
                 COROUTINES.append(explode(canvas, center_row, center_column))
 
-                starship_center_row = row - round(frame_row / 2)
-                starship_center_column = column - round(frame_column / 2)
+                starship_center_row = row + round(frame_row / 2)
+                starship_center_column = column + round(frame_column / 2)
                 COROUTINES.append(
                     explode(
                         canvas, starship_center_row, starship_center_column
@@ -124,8 +151,10 @@ async def animate_spaceship(
 
         row_direction, column_direction, space_pressed = read_controls(canvas)
 
-        if space_pressed:
-            await spaceship_shooting(canvas, row, column, frame_column)
+        if space_pressed and YEAR >= 2020:
+            COROUTINES.append(
+                spaceship_shooting(canvas, row, column, frame_column)
+            )
 
         row_speed, column_speed = update_speed(
             row_speed,
@@ -182,11 +211,15 @@ def draw(
     canvas, starship_frame_1, starship_frame_2, garbage_frames, gameover_frame
 ):
     rows_number, columns_number = canvas.getmaxyx()
+
+    COROUTINES.append(year_counter_by_time(canvas, secs=1.5))
+
     stars = '+*.:'
-    border_offset = 2
+    border_offset = 1
     for _ in range(60):
+        scoreboard_height = 2
         rand_height = random.randint(
-            border_offset, rows_number - border_offset
+            border_offset, rows_number - scoreboard_height - border_offset
         )
         rand_width = random.randint(
             border_offset, columns_number - border_offset
@@ -219,8 +252,7 @@ def draw(
         )
     )
 
-    COROUTINES.append(fill_orbit_with_garbage(canvas, garbage_frames, 10))
-    COROUTINES.append(show_obstacles(canvas, OBSTACLES))
+    COROUTINES.append(fill_orbit_with_garbage(canvas, garbage_frames))
 
     canvas.nodelay(True)
     curses.curs_set(False)
