@@ -7,20 +7,20 @@ from pathlib import Path
 
 from curses_tools import draw_frame, get_frame_size, read_controls
 from explosion import explode
-from game_scenario import get_garbage_delay_tics
+from game_scenario import PHRASES, get_garbage_delay_tics
 from obstacles import obstacles, obstacles_in_last_collisions
 from physics import update_speed
 from space_garbage import fly_garbage
 
 TIC_TIMEOUT = 0.05
 coroutines = []
-year = 2020
+year = 1957
 
 
 async def year_counter_by_time(canvas, secs):
     global year
     rows_number, columns_number = canvas.getmaxyx()
-    scoreboard_height = 2
+    scoreboard_height = 3
     text_right_margin = 1
     subboard_rows, subboard_columns = (
         scoreboard_height,
@@ -37,10 +37,14 @@ async def year_counter_by_time(canvas, secs):
         subboard_start_column,
     )
     year_msg_row, year_msg_column = 0, 1
+    phrase_row, phrase_column = 1, 1
+
     tics_per_year = int(secs / TIC_TIMEOUT)
     while True:
         for _ in range(tics_per_year):
             year_board.addstr(year_msg_row, year_msg_column, f'Year: {year}')
+            phrase = PHRASES.get(year) or ''
+            year_board.addstr(phrase_row, phrase_column, phrase)
             await sleep(1)
         year += 1
 
@@ -214,7 +218,7 @@ def fill_orbit_with_stars(canvas, count=60):
     rows_number, columns_number = canvas.getmaxyx()
     stars = '+*.:'
     border_offset = 1
-    scoreboard_height = 2
+    scoreboard_height = 3
     for _ in range(count):
         rand_height = random.randint(
             border_offset, rows_number - scoreboard_height - border_offset
