@@ -19,12 +19,16 @@ YEAR = 1957
 
 async def year_counter_by_time(canvas, secs):
     global YEAR
-    scoreboard_height = 2
     rows_number, columns_number = canvas.getmaxyx()
-    subboard_rows, subboard_columns = scoreboard_height, columns_number - 1
+    scoreboard_height = 2
+    text_right_margin = 1
+    subboard_rows, subboard_columns = (
+        scoreboard_height,
+        columns_number - text_right_margin,
+    )
     subboard_start_row, subboard_start_column = (
         rows_number - scoreboard_height,
-        1,
+        text_right_margin,
     )
     year_board = canvas.derwin(
         subboard_rows,
@@ -33,9 +37,11 @@ async def year_counter_by_time(canvas, secs):
         subboard_start_column,
     )
     year_msg_row, year_msg_column = 0, 1
+    tics_per_year = int(secs / TIC_TIMEOUT)
     while True:
-        year_board.addstr(year_msg_row, year_msg_column, f'Year: {YEAR}')
-        await sleep(int(secs / TIC_TIMEOUT))
+        for _ in range(tics_per_year):
+            year_board.addstr(year_msg_row, year_msg_column, f'Year: {YEAR}')
+            await sleep(1)
         YEAR += 1
 
 
