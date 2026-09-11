@@ -213,17 +213,12 @@ async def blink(
         await sleep(3)
 
 
-def draw(
-    canvas, starship_frame_1, starship_frame_2, garbage_frames, gameover_frame
-):
+def fill_orbit_with_start(canvas, count=60):
     rows_number, columns_number = canvas.getmaxyx()
-
-    COROUTINES.append(year_counter_by_time(canvas, secs=1.5))
-
     stars = '+*.:'
     border_offset = 1
-    for _ in range(60):
-        scoreboard_height = 2
+    scoreboard_height = 2
+    for _ in range(count):
         rand_height = random.randint(
             border_offset, rows_number - scoreboard_height - border_offset
         )
@@ -240,6 +235,16 @@ def draw(
             rand_star,
         )
         COROUTINES.append(coroutine)
+
+
+def draw(
+    canvas, starship_frame_1, starship_frame_2, garbage_frames, gameover_frame
+):
+    rows_number, columns_number = canvas.getmaxyx()
+
+    COROUTINES.append(year_counter_by_time(canvas, secs=1.5))
+
+    fill_orbit_with_start(canvas)
 
     center_row = rows_number // 2
     center_column = columns_number // 2
